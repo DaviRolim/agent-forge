@@ -131,10 +131,10 @@ class Forge:
             self.log("RESUME", "Skipping PLANNER — SPEC.md exists")
 
         # Stage 3: Contract negotiation
-        if not self.resume or not (self.artifacts / "SPRINT_CONTRACT.md").is_file():
+        if not self.resume or not (self.artifacts / "CONTRACT.md").is_file():
             self._stage_contract_negotiation()
         else:
-            self.log("RESUME", "Skipping CONTRACT — SPRINT_CONTRACT.md exists")
+            self.log("RESUME", "Skipping CONTRACT — CONTRACT.md exists")
 
         # Stage 4: Build + QA loop
         self._stage_build_qa_loop()
@@ -183,9 +183,9 @@ class Forge:
             self.log("CONTRACT", f"Round {round_num}: Generator proposing contract")
             run_claude(GENERATOR_CONTRACT_PROMPT, cwd=self.work_dir, model=GENERATOR_MODEL, verbose=self.verbose)
 
-            contract = self.artifacts / "SPRINT_CONTRACT.md"
+            contract = self.artifacts / "CONTRACT.md"
             if not contract.is_file():
-                raise RuntimeError("Generator did not create SPRINT_CONTRACT.md")
+                raise RuntimeError("Generator did not create CONTRACT.md")
 
             self.log("CONTRACT", f"Round {round_num}: Evaluator reviewing contract")
             run_claude(EVALUATOR_CONTRACT_REVIEW_PROMPT, cwd=self.work_dir, model=EVALUATOR_MODEL, verbose=self.verbose)

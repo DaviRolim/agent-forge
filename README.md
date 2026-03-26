@@ -2,7 +2,9 @@
 
 GAN-inspired multi-agent harness for building complete features and applications.
 
-**Planner** (Opus 4.6) → **Contract Negotiation** (Generator ↔ Evaluator) → **Build** (Sonnet 4.6) → **QA** (Opus 4.6 + Playwright) → Fix loop (up to 3 rounds)
+**Planner** (Opus 4.6) → **Contract Negotiation** (Generator ↔ Evaluator) → **Build** (Opus 4.6, full session) → **QA** (Opus 4.6 + Playwright CLI) → Fix loop (up to 3 rounds)
+
+No sprints — Opus 4.6 sustains coherent work for hours without decomposition (validated by Anthropic's blog).
 
 Inspired by [Anthropic's harness design blog](https://www.anthropic.com/engineering/harness-design-long-running-apps).
 
@@ -13,13 +15,13 @@ USER PROMPT (1-4 sentences)
     ↓
 PLANNER         Opus expands prompt into rich product SPEC.md
     ↓
-CONTRACT        Generator proposes acceptance criteria
+CONTRACT        Generator proposes acceptance criteria (CONTRACT.md)
     ↓                ↕ iterate until agreed
 EVALUATOR       Reviews contract, approves or requests changes
     ↓
-BUILDER         Sonnet implements against the contract
+GENERATOR       Opus builds EVERYTHING in one continuous session
     ↓
-EVALUATOR       QAs the running app (Playwright + CLI)
+EVALUATOR       QAs the running app (Playwright CLI + tools)
     ↓
                 If FAIL → fix → re-evaluate (max 3 rounds)
     ↓
