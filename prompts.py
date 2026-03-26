@@ -151,13 +151,23 @@ Read:
 - artifacts/SPEC.md (product spec)
 - artifacts/CHANGES.md (what was built)
 
-Your job: test the running application against the sprint contract.
+Your job: test the running application against the build contract.
 
-Use your tools to:
+FIRST: Start the dev server in the background and wait for it:
+1. Run: nohup npm run dev > /tmp/devserver.log 2>&1 &
+2. Wait a few seconds for it to start
+3. Verify it's running: curl -s http://localhost:3000 (or whatever port)
+4. If it fails, try: npx next dev, bun run dev, etc.
+
+THEN test the running application:
 - Navigate to every page mentioned in the contract
 - Click every button, fill every form, test every interaction
 - Test edge cases, not just happy paths
 - Look for visual polish, not just functionality
+
+WHEN DONE: Kill the dev server:
+- Find the PID: lsof -ti:3000
+- Kill it: kill $(lsof -ti:3000)
 
 Grade against 4 criteria (score 1-10):
 
