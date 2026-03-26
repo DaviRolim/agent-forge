@@ -35,8 +35,8 @@ from prompts import (
 MAX_QA_ROUNDS = 3
 MAX_CONTRACT_ROUNDS = 3
 PLANNER_MODEL = "opus"           # Claude Opus 4.6
-GENERATOR_MODEL = "sonnet"       # Claude Sonnet 4.6
-EVALUATOR_MODEL = "opus"         # Claude Opus 4.6 (skeptical QA needs best model)
+GENERATOR_MODEL = "opus"         # Claude Opus 4.6 (all agents use best model)
+EVALUATOR_MODEL = "opus"         # Claude Opus 4.6
 QA_SCORE_THRESHOLD = {
     "product_depth": 7,
     "functionality": 7,
