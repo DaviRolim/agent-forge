@@ -61,8 +61,8 @@ CONTEXT_EXCLUDE = {
 }
 
 # Least-privilege tool subsets per agent role
-TOOLS_READ_ONLY = ["Read", "ListFiles", "Search", "Glob"]
-TOOLS_READ_EXECUTE = ["Read", "ListFiles", "Search", "Glob", "Bash"]
+TOOLS_READ_WRITE = ["Read", "Write", "Edit", "ListFiles", "Search", "Glob"]  # can read codebase + write artifacts, no Bash
+TOOLS_READ_WRITE_EXECUTE = ["Read", "Write", "Edit", "ListFiles", "Search", "Glob", "Bash"]  # can also run commands
 # Generator uses full bypassPermissions (no tool restriction)
 
 # Stack detection files
@@ -411,7 +411,7 @@ class Forge:
             cwd=self.work_dir,
             model=PLANNER_MODEL,
             verbose=self.verbose,
-            allowed_tools=TOOLS_READ_ONLY,  # Planner: read-only
+            allowed_tools=TOOLS_READ_WRITE,  # Planner: read + write artifacts, no Bash
         )
 
         spec = self.artifacts / "SPEC.md"
@@ -450,7 +450,7 @@ class Forge:
                 cwd=self.work_dir,
                 model=EVALUATOR_CONTRACT_MODEL,
                 verbose=self.verbose,
-                allowed_tools=TOOLS_READ_ONLY,  # Evaluator contract review: read-only
+                allowed_tools=TOOLS_READ_WRITE,  # Evaluator contract review: read + write artifacts, no Bash
             )
             eval_elapsed = time.time() - t0
             self._emit_manifest("CONTRACT_EVAL", "complete", eval_elapsed, EVALUATOR_CONTRACT_MODEL, round_num)
@@ -483,7 +483,7 @@ class Forge:
             cwd=self.work_dir,
             model=CONFIDENCE_MODEL,
             verbose=self.verbose,
-            allowed_tools=TOOLS_READ_ONLY,
+            allowed_tools=TOOLS_READ_WRITE,
         )
 
         elapsed = time.time() - t0
@@ -583,7 +583,7 @@ class Forge:
                 cwd=self.work_dir,
                 model=EVALUATOR_QA_MODEL,
                 verbose=self.verbose,
-                allowed_tools=TOOLS_READ_EXECUTE,  # Evaluator QA: read + execute (no code writes)
+                allowed_tools=TOOLS_READ_WRITE_EXECUTE,  # Evaluator QA: read + execute (no code writes)
             )
 
             qa_elapsed = time.time() - t0
