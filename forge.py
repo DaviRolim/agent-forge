@@ -5,6 +5,8 @@ Usage:
     python3 forge.py "Build a checkout flow with progress indicator" --dir /path/to/project
     python3 forge.py --task-file task.md --dir /path/to/project --verbose
     python3 forge.py "Build X" --dir /path/to/project --all-opus
+    python3 forge.py --task-file task.md --dir /path/to/project --fast  # skip contract negotiation
+    python3 forge.py --task-file task.md --dir /path/to/project --contract-rounds 1
 """
 
 from __future__ import annotations
@@ -36,7 +38,7 @@ from prompts import (
 # ---------------------------------------------------------------------------
 
 MAX_QA_ROUNDS = 3
-MAX_CONTRACT_ROUNDS = 3
+MAX_CONTRACT_ROUNDS = 2          # Default reduced from 3 (3 rounds is overkill for most tasks)
 MAX_CONFIDENCE_RETRIES = 1
 CONFIDENCE_THRESHOLD = 6
 
@@ -62,7 +64,7 @@ CONTEXT_EXCLUDE = {
 
 # Least-privilege tool subsets per agent role
 TOOLS_READ_WRITE = ["Read", "Write", "Edit", "ListFiles", "Search", "Glob"]  # can read codebase + write artifacts, no Bash
-TOOLS_READ_WRITE_EXECUTE = ["Read", "Write", "Edit", "ListFiles", "Search", "Glob", "Bash"]  # can also run commands
+TOOLS_READ_WRITE_EXECUTE = ["Read", "Write", "Edit", "ListFiles", "Search", "Glob", "Bash", "Bash(playwright-cli:*)"]  # can also run commands + playwright
 # Generator uses full bypassPermissions (no tool restriction)
 
 # Stack detection files
@@ -174,6 +176,7 @@ class Forge:
     resume: bool = False
     log_file: Path | None = None
     all_opus: bool = False
+    max_contract_rounds: int | None = None  # None = use default, 0 = skip contract
 
     artifacts: Path = field(init=False)
     _log_fh: object = field(init=False, default=None)
@@ -369,8 +372,11 @@ class Forge:
             self.log("RESUME", "Skipping PLANNER — SPEC.md exists")
 
         # Stage 3: Contract negotiation
-        if not self.resume or not (self.artifacts / "CONTRACT.md").is_file():
-            self._stage_contract_negotiation()
+        effective_contract_rounds = self.max_contract_rounds if self.max_contract_rounds is not None else MAX_CONTRACT_ROUNDS
+        if effective_contract_rounds == 0:
+            self.log("FAST", "Skipping contract negotiation (--fast or --contract-rounds 0)")
+        elif not self.resume or not (self.artifacts / "CONTRACT.md").is_file():
+            self._stage_contract_negotiation(max_rounds=effective_contract_rounds)
         else:
             self.log("RESUME", "Skipping CONTRACT — CONTRACT.md exists")
 
@@ -422,9 +428,9 @@ class Forge:
         self._emit_manifest("PLANNER", "complete", elapsed, PLANNER_MODEL)
         self.log("PLANNER", f"SPEC.md created ({spec.stat().st_size} bytes)")
 
-    def _stage_contract_negotiation(self):
+    def _stage_contract_negotiation(self, max_rounds: int = MAX_CONTRACT_ROUNDS):
         """Generator proposes contract, Evaluator reviews, iterate until agreed."""
-        for round_num in range(1, MAX_CONTRACT_ROUNDS + 1):
+        for round_num in range(1, max_rounds + 1):
             # Generator proposes (full access)
             self.log("CONTRACT", f"Round {round_num}: Generator proposing contract")
             t0 = time.time()
@@ -466,7 +472,7 @@ class Forge:
                 break
             else:
                 self.log("CONTRACT", f"Round {round_num}: Contract needs changes — iterating")
-                if round_num == MAX_CONTRACT_ROUNDS:
+                if round_num == max_rounds:
                     self.log("CONTRACT", "Max rounds reached — proceeding with current contract")
 
     def _stage_confidence_gate(self) -> tuple[bool, str]:
@@ -678,6 +684,10 @@ def main():
     parser.add_argument("--log-file", help="Write structured JSONL events")
     parser.add_argument("--all-opus", action="store_true",
                         help="Force all agents to use Opus (override model tiering)")
+    parser.add_argument("--fast", action="store_true",
+                        help="Fast mode: skip contract negotiation entirely, go straight from SPEC to BUILD")
+    parser.add_argument("--contract-rounds", type=int, default=None,
+                        help="Max contract negotiation rounds (default: 2, use 0 to skip)")
 
     args = parser.parse_args()
 
@@ -694,6 +704,14 @@ def main():
         print(f"Error: {work_dir} is not a directory")
         sys.exit(1)
 
+    # Handle fast mode and contract round overrides
+    if args.fast:
+        contract_rounds = 0
+    elif args.contract_rounds is not None:
+        contract_rounds = args.contract_rounds
+    else:
+        contract_rounds = None  # use default
+
     forge = Forge(
         task=task,
         work_dir=work_dir,
@@ -701,6 +719,7 @@ def main():
         resume=args.resume,
         log_file=Path(args.log_file) if args.log_file else None,
         all_opus=args.all_opus,
+        max_contract_rounds=contract_rounds,
     )
 
     forge.run()

@@ -215,21 +215,45 @@ Read and internalize the requirements:
 Create a mental checklist of every acceptance criterion. Understand what "done" looks like.
 
 ## PHASE 2: GATHER
-Start the dev server and collect evidence:
-1. Run: nohup npm run dev > /tmp/devserver.log 2>&1 &
-2. Wait a few seconds for it to start
-3. Verify it's running: curl -s http://localhost:3000 (or whatever port)
+Start the dev server and USE PLAYWRIGHT-CLI to test the running application:
+
+1. Install dependencies if needed: npm install (or bun install)
+2. Start the dev server in background: nohup npm run dev > /tmp/devserver.log 2>&1 &
+3. Wait a few seconds, verify: curl -s http://localhost:3000 (or check the port in package.json)
 4. If it fails, try: npx next dev, bun run dev, etc.
 
-Navigate EVERY page mentioned in the contract. For EACH acceptance criterion:
-- Perform the exact test described in the verification method
-- Click every button, fill every form, test every interaction
-- Test edge cases, not just happy paths
-- Record specific evidence: what you saw, what you expected
+**USE PLAYWRIGHT-CLI FOR ALL TESTING.** Do NOT just read code or curl pages.
 
-When done testing: kill the dev server:
-- Find the PID: lsof -ti:3000
-- Kill it: kill $(lsof -ti:3000)
+```bash
+# Open the app in a browser
+playwright-cli open http://localhost:3000
+
+# Take a snapshot to see the page structure and element refs
+playwright-cli snapshot
+
+# Interact using element refs from the snapshot
+playwright-cli click e5
+playwright-cli fill e3 "test input"
+playwright-cli type "hello"
+playwright-cli press Enter
+
+# Take screenshots as evidence
+playwright-cli screenshot --filename=test-evidence.png
+
+# Navigate to different pages
+playwright-cli goto http://localhost:3000/other-page
+```
+
+For EACH acceptance criterion:
+- Use playwright-cli to perform the exact interaction described
+- Take a snapshot after each interaction to verify the result
+- Test edge cases, not just happy paths
+- Take screenshots as evidence of bugs
+- Record specific evidence: what you saw vs what you expected
+
+When done testing:
+- Close the browser: playwright-cli close
+- Kill the dev server: kill $(lsof -ti:3000)
 
 ## PHASE 3: EXECUTE
 Grade against 4 criteria using the evidence collected (score 1-10):
